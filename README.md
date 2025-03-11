@@ -1,5 +1,5 @@
 # Flash
-A simple, zero-dependency TCP server written in Go for Monitoring and Ticketing Speed Violations
+A simple, in-memory TCP server written in Go for Monitoring and Ticketing Speed Violations
 
 ## Specification:
 [Protohackers - Speed Daemon](https://protohackers.com/problem/6)
