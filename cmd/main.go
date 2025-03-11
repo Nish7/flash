@@ -1,6 +1,9 @@
 package main
 
-import "log"
+import (
+	"github.com/nish7/flash/internal/server"
+	"log"
+)
 
 func main() {
 	server := NewServer(":8085", NewInMemoryStore())

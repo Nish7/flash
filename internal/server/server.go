@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"bufio"
@@ -6,18 +6,20 @@ import (
 	"io"
 	"log"
 	"net"
+
+	repo "github.com/nish7/flash/internal/repository"
 )
 
 type Server struct {
 	quitch      chan struct{}
 	listener    net.Listener
 	addr        string
-	store       Store
+	store       repo.Store
 	cameras     map[net.Conn]Camera
 	dispatchers map[net.Conn]Dispatcher
 }
 
-func NewServer(addr string, store Store) *Server {
+func NewServer(addr string, store repo.Store) *Server {
 	return &Server{
 		quitch:      make(chan struct{}),
 		addr:        addr,
@@ -141,7 +143,7 @@ func (s *Server) HandlePlateReq(conn net.Conn, plate Plate) error {
 	cam := s.cameras[conn]
 	log.Printf("[%s] Plate Record Receieved: %v from Camera %v\n", conn.RemoteAddr().String(), plate, cam)
 
-	observation := Observation{Plate: plate.Plate, Road: cam.Road, Mile: cam.Mile, Timestamp: plate.Timestamp, Limit: cam.Limit}
+	observation := repo.Observation{Plate: plate.Plate, Road: cam.Road, Mile: cam.Mile, Timestamp: plate.Timestamp, Limit: cam.Limit}
 
 	s.store.AddObservation(observation)
 	s.HandleSpeedViolations(observation, conn)
