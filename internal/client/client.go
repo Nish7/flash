@@ -1,9 +1,10 @@
-package main
+package client
 
 import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	srv "github.com/nish7/flash/internal/server"
 	"net"
 )
 
@@ -31,13 +32,13 @@ func (c *TCPClient) Disconnect() {
 	c.Conn.Close()
 }
 
-func (c *TCPClient) SendPlateRecord(plate Plate) {
+func (c *TCPClient) SendPlateRecord(plate srv.Plate) {
 	plateBytes := []byte(plate.Plate)
 	plateLen := len(plateBytes)
 
 	msg := make([]byte, 1+1+plateLen+4)
 
-	msg[0] = byte(PLATE_REQ)
+	msg[0] = byte(srv.PLATE_REQ)
 	msg[1] = byte(plateLen)
 
 	copy(msg[2:2+plateLen], plateBytes)
@@ -53,9 +54,9 @@ func (c *TCPClient) SendPlateRecord(plate Plate) {
 }
 
 // TODO: return error as well
-func (c *TCPClient) SendIAMCamera(cam Camera) {
+func (c *TCPClient) SendIAMCamera(cam srv.Camera) {
 	msg := make([]byte, 7)
-	msg[0] = byte(IAMCAMERA_REQ)
+	msg[0] = byte(srv.IAMCAMERA_REQ)
 	binary.BigEndian.PutUint16(msg[1:3], cam.Road)
 	binary.BigEndian.PutUint16(msg[3:5], cam.Mile)
 	binary.BigEndian.PutUint16(msg[5:7], cam.Limit)
@@ -70,10 +71,10 @@ func (c *TCPClient) SendIAMCamera(cam Camera) {
 	fmt.Printf("Client -> Sent CameraRequest: %v - hex[% X]\n", cam, msg)
 }
 
-func (c *TCPClient) SendIAMDispatcher(disp Dispatcher) {
+func (c *TCPClient) SendIAMDispatcher(disp srv.Dispatcher) {
 	var buf bytes.Buffer
 
-	if err := binary.Write(&buf, binary.BigEndian, byte(IAMDISPATCHER_REQ)); err != nil {
+	if err := binary.Write(&buf, binary.BigEndian, byte(srv.IAMDISPATCHER_REQ)); err != nil {
 		fmt.Printf("Error writing request type: %v\n", err)
 		return
 	}

@@ -1,9 +1,10 @@
-package main
+package server
 
 import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
+	repo "github.com/nish7/flash/internal/repository"
 	"io"
 )
 
@@ -100,8 +101,8 @@ func ParseCameraRequest(reader *bufio.Reader) (Camera, error) {
 }
 
 // used by integration_testing
-func ParseTicket(reader *bufio.Reader) (Ticket, error) {
-	ticket := Ticket{}
+func ParseTicket(reader *bufio.Reader) (repo.Ticket, error) {
+	ticket := repo.Ticket{}
 
 	// read the plate value
 	plate, err := ParseString(reader)

@@ -1,3 +1,3 @@
-module github.com/Nish7/flash
+module github.com/nish7/flash
 
-go 1.21.6
+go 1.23.4

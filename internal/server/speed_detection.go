@@ -1,14 +1,15 @@
-package main
+package server
 
 import (
 	"encoding/binary"
 	"fmt"
+	repo "github.com/nish7/flash/internal/repository"
 	"log"
 	"net"
 	"slices"
 )
 
-func (s *Server) HandleSpeedViolations(obs Observation, conn net.Conn) {
+func (s *Server) HandleSpeedViolations(obs repo.Observation, conn net.Conn) {
 	log.Printf("[%s] Prior Observations [%s]: %v", conn.RemoteAddr().String(), obs.Plate, s.store.GetObservations(obs.Plate))
 
 	// for all prior observation check any speed violations
@@ -30,7 +31,7 @@ func (s *Server) HandleSpeedViolations(obs Observation, conn net.Conn) {
 			continue
 		}
 
-		ticket := &Ticket{
+		ticket := &repo.Ticket{
 			Plate:      obs1.Plate,
 			Road:       obs1.Road,
 			Mile1:      obs1.Mile,
@@ -50,7 +51,7 @@ func (s *Server) HandleSpeedViolations(obs Observation, conn net.Conn) {
 	}
 }
 
-func (s *Server) DispatchTicket(ticket *Ticket, conn net.Conn) {
+func (s *Server) DispatchTicket(ticket *repo.Ticket, conn net.Conn) {
 	for c, disp := range s.dispatchers {
 		if slices.Contains(disp.Roads, ticket.Road) {
 			s.store.AddTicket(*ticket)
@@ -67,7 +68,7 @@ func (s *Server) DispatchTicket(ticket *Ticket, conn net.Conn) {
 	log.Printf("No Dispatcher Found")
 }
 
-func (s *Server) SendTicket(conn net.Conn, ticket *Ticket) error {
+func (s *Server) SendTicket(conn net.Conn, ticket *repo.Ticket) error {
 	plateLen := len(ticket.Plate)
 	msg := make([]byte, 1+1+plateLen+16)
 
@@ -86,7 +87,7 @@ func (s *Server) SendTicket(conn net.Conn, ticket *Ticket) error {
 	return err
 }
 
-func isSpeedViolation(obs1, obs2 Observation) (bool, uint16) {
+func isSpeedViolation(obs1, obs2 repo.Observation) (bool, uint16) {
 	distance := uint32(obs2.Mile - obs1.Mile)
 	time := obs2.Timestamp - obs1.Timestamp // unix timestamp -> seconds
 	if time == 0 {
@@ -104,7 +105,7 @@ func isSpeedViolation(obs1, obs2 Observation) (bool, uint16) {
 }
 
 // implementing multi-day limit and with one limit per day
-func CheckTicketLimit(ticket *Ticket, plateTickets []Ticket, conn net.Conn) bool {
+func CheckTicketLimit(ticket *repo.Ticket, plateTickets []repo.Ticket, conn net.Conn) bool {
 	day1 := ticket.Timestamp1 / 86400
 	day2 := ticket.Timestamp2 / 86400
 
