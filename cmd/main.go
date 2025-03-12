@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/nish7/flash/internal/server"
+	server "github.com/nish7/flash/internal"
 	"log"
 )
 
 func main() {
-	server := NewServer(":8085", NewInMemoryStore())
+	server := server.NewServer(":8085", server.NewInMemoryStore())
 	err := server.Start()
 	if err != nil {
 		log.Fatalf("Error: Starting the server %v", err)
