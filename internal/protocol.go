@@ -4,40 +4,8 @@ import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
-	repo "github.com/nish7/flash/internal/repository"
 	"io"
 )
-
-type MsgType byte
-
-const (
-	IAMCAMERA_REQ     MsgType = 0x80
-	IAMDISPATCHER_REQ MsgType = 0x81
-	PLATE_REQ         MsgType = 0x20
-	TICKET_RESP       MsgType = 0x21
-)
-
-type Client int
-
-const (
-	CAMERA = iota
-	DISPATCHER
-)
-
-type Camera struct {
-	Road  uint16
-	Mile  uint16
-	Limit uint16
-}
-
-type Plate struct {
-	Plate     string
-	Timestamp uint32
-}
-
-type Dispatcher struct {
-	Roads []uint16
-}
 
 func ParseDispatcherRecord(reader *bufio.Reader) (Dispatcher, error) {
 	dispatcher := Dispatcher{}
@@ -101,8 +69,8 @@ func ParseCameraRequest(reader *bufio.Reader) (Camera, error) {
 }
 
 // used by integration_testing
-func ParseTicket(reader *bufio.Reader) (repo.Ticket, error) {
-	ticket := repo.Ticket{}
+func ParseTicket(reader *bufio.Reader) (Ticket, error) {
+	ticket := Ticket{}
 
 	// read the plate value
 	plate, err := ParseString(reader)
@@ -124,6 +92,23 @@ func ParseTicket(reader *bufio.Reader) (repo.Ticket, error) {
 	}
 
 	return ticket, nil
+}
+
+func EncodeTicket(ticket *Ticket) []byte {
+	plateLen := len(ticket.Plate)
+	msg := make([]byte, 1+1+plateLen+16)
+
+	msg[0] = byte(TICKET_RESP)
+	msg[1] = byte(plateLen)
+	copy(msg[2:2+plateLen], ticket.Plate)
+	binary.BigEndian.PutUint16(msg[2+plateLen:4+plateLen], ticket.Road)
+	binary.BigEndian.PutUint16(msg[4+plateLen:6+plateLen], ticket.Mile1)
+	binary.BigEndian.PutUint32(msg[6+plateLen:10+plateLen], ticket.Timestamp1)
+	binary.BigEndian.PutUint16(msg[10+plateLen:12+plateLen], ticket.Mile2)
+	binary.BigEndian.PutUint32(msg[12+plateLen:16+plateLen], ticket.Timestamp2)
+	binary.BigEndian.PutUint16(msg[16+plateLen:18+plateLen], ticket.Speed)
+
+	return msg
 }
 
 func ParsePlateRecord(reader *bufio.Reader) (Plate, error) {

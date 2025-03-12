@@ -1,15 +1,13 @@
 package server
 
 import (
-	"encoding/binary"
 	"fmt"
-	repo "github.com/nish7/flash/internal/repository"
 	"log"
 	"net"
 	"slices"
 )
 
-func (s *Server) HandleSpeedViolations(obs repo.Observation, conn net.Conn) {
+func (s *Server) handleSpeedViolations(conn net.Conn, obs Observation) error {
 	log.Printf("[%s] Prior Observations [%s]: %v", conn.RemoteAddr().String(), obs.Plate, s.store.GetObservations(obs.Plate))
 
 	// for all prior observation check any speed violations
@@ -31,7 +29,7 @@ func (s *Server) HandleSpeedViolations(obs repo.Observation, conn net.Conn) {
 			continue
 		}
 
-		ticket := &repo.Ticket{
+		ticket := &Ticket{
 			Plate:      obs1.Plate,
 			Road:       obs1.Road,
 			Mile1:      obs1.Mile,
@@ -43,51 +41,41 @@ func (s *Server) HandleSpeedViolations(obs repo.Observation, conn net.Conn) {
 
 		priorPlateTickets := s.store.GetTickets(obs.Plate)
 		log.Printf("[%s] Prior Plate Tickets [%s]: %v", conn.RemoteAddr().String(), obs.Plate, priorPlateTickets)
-		if !CheckTicketLimit(ticket, priorPlateTickets, conn) {
+		if !CheckTicketLimit(conn, ticket, priorPlateTickets) {
 			continue
 		}
 
-		s.DispatchTicket(ticket, conn)
+		err := s.DispatchTicket(conn, ticket)
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func (s *Server) DispatchTicket(ticket *repo.Ticket, conn net.Conn) {
+func (s *Server) DispatchTicket(conn net.Conn, ticket *Ticket) error {
 	for c, disp := range s.dispatchers {
 		if slices.Contains(disp.Roads, ticket.Road) {
 			s.store.AddTicket(*ticket)
 			err := s.SendTicket(c, ticket)
 			if err != nil {
-				fmt.Println("Error sending ticket:", err)
+				return err
 			} else {
 				log.Printf("[%s] Ticket sent for %s on road %d [%v]\n", conn.RemoteAddr().String(), ticket.Plate, ticket.Road, ticket)
+				return nil
 			}
-			return
 		}
 	}
 
-	log.Printf("No Dispatcher Found")
+	return fmt.Errorf("No Dispatcher Found")
 }
 
-func (s *Server) SendTicket(conn net.Conn, ticket *repo.Ticket) error {
-	plateLen := len(ticket.Plate)
-	msg := make([]byte, 1+1+plateLen+16)
-
-	// TODO: to be improved
-	msg[0] = byte(TICKET_RESP)
-	msg[1] = byte(plateLen)
-	copy(msg[2:2+plateLen], ticket.Plate)
-	binary.BigEndian.PutUint16(msg[2+plateLen:4+plateLen], ticket.Road)
-	binary.BigEndian.PutUint16(msg[4+plateLen:6+plateLen], ticket.Mile1)
-	binary.BigEndian.PutUint32(msg[6+plateLen:10+plateLen], ticket.Timestamp1)
-	binary.BigEndian.PutUint16(msg[10+plateLen:12+plateLen], ticket.Mile2)
-	binary.BigEndian.PutUint32(msg[12+plateLen:16+plateLen], ticket.Timestamp2)
-	binary.BigEndian.PutUint16(msg[16+plateLen:18+plateLen], ticket.Speed)
-
-	_, err := conn.Write(msg)
+func (s *Server) SendTicket(conn net.Conn, ticket *Ticket) error {
+	_, err := conn.Write(EncodeTicket(ticket))
 	return err
 }
 
-func isSpeedViolation(obs1, obs2 repo.Observation) (bool, uint16) {
+func isSpeedViolation(obs1, obs2 Observation) (bool, uint16) {
 	distance := uint32(obs2.Mile - obs1.Mile)
 	time := obs2.Timestamp - obs1.Timestamp // unix timestamp -> seconds
 	if time == 0 {
@@ -105,7 +93,7 @@ func isSpeedViolation(obs1, obs2 repo.Observation) (bool, uint16) {
 }
 
 // implementing multi-day limit and with one limit per day
-func CheckTicketLimit(ticket *repo.Ticket, plateTickets []repo.Ticket, conn net.Conn) bool {
+func CheckTicketLimit(conn net.Conn, ticket *Ticket, plateTickets []Ticket) bool {
 	day1 := ticket.Timestamp1 / 86400
 	day2 := ticket.Timestamp2 / 86400
 
