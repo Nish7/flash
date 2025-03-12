@@ -7,17 +7,16 @@ import (
 	"testing"
 	"time"
 
-	fc "github.com/nish7/flash/internal/client"
-	repo "github.com/nish7/flash/internal/repository"
-	srv "github.com/nish7/flash/internal/server"
+	srv "github.com/nish7/flash/internal"
 )
 
 var testServer *srv.Server
-var addr string = ":8080"
+
+const addr string = ":8080"
 
 func TestMain(t *testing.M) {
 	// setup the server
-	store := repo.NewInMemoryStore()
+	store := srv.NewInMemoryStore()
 	testServer = srv.NewServer(addr, store)
 
 	go func() {
@@ -35,14 +34,14 @@ func TestMain(t *testing.M) {
 func TestSimpleTicketGeneration(t *testing.T) {
 	// setup clients
 	dispatchers := []srv.Dispatcher{{Roads: []uint16{123, 2}}}
-	dispatcherClients := SetupDispatchers(t, dispatchers...)
+	dispatcherClients := SetupDispatchers(t, addr, dispatchers...)
 	d1 := dispatcherClients[0]
 
 	cameras := []srv.Camera{
 		{Road: 123, Mile: 8, Limit: 60},
 		{Road: 123, Mile: 9, Limit: 60},
 	}
-	cameraClients := SetupCameras(t, cameras...)
+	cameraClients := SetupCameras(t, addr, cameras...)
 	c1, c2 := cameraClients[0], cameraClients[1]
 
 	defer ClientCleanUp(t, cameraClients...)
@@ -56,12 +55,12 @@ func TestSimpleTicketGeneration(t *testing.T) {
 
 	// assert the ticket
 	reader := bufio.NewReader(d1.Conn)
-	expectedTicket := repo.Ticket{Plate: "UN1X", Road: 123, Mile1: 8, Mile2: 9, Timestamp1: 0, Timestamp2: 45, Speed: 8000}
+	expectedTicket := srv.Ticket{Plate: "UN1X", Road: 123, Mile1: 8, Mile2: 9, Timestamp1: 0, Timestamp2: 45, Speed: 8000}
 	AssertTicket(t, reader, expectedTicket)
 }
 
 func TestPlateRequest(t *testing.T) {
-	client := fc.NewTCPClient(addr)
+	client := srv.NewTCPClient(addr)
 	client.Connect()
 	defer client.Disconnect()
 
@@ -72,7 +71,7 @@ func TestPlateRequest(t *testing.T) {
 }
 
 func TestDispatcherRequest(t *testing.T) {
-	client := fc.NewTCPClient(addr)
+	client := srv.NewTCPClient(addr)
 	client.Connect()
 	defer client.Disconnect()
 
@@ -81,69 +80,10 @@ func TestDispatcherRequest(t *testing.T) {
 }
 
 func TestCameraRequest(t *testing.T) {
-	client := fc.NewTCPClient(addr)
+	client := srv.NewTCPClient(addr)
 	client.Connect()
 	defer client.Disconnect()
 
 	client.SendIAMCamera(srv.Camera{Road: 66, Mile: 100, Limit: 60})
 	time.Sleep(500 * time.Millisecond) // test ended before verifying
-}
-
-func SetupDispatchers(t *testing.T, dispatchers ...srv.Dispatcher) []*fc.TCPClient {
-	t.Helper()
-
-	clients := make([]*fc.TCPClient, len(dispatchers))
-	for i, dispatcher := range dispatchers {
-		client := fc.NewTCPClient(addr)
-		if err := client.Connect(); err != nil {
-			t.Fatalf("Failed to connect dispatcher %d: %v", i, err)
-		}
-
-		client.SendIAMDispatcher(dispatcher)
-		clients[i] = client
-	}
-	return clients
-}
-
-func SetupCameras(t *testing.T, cameras ...srv.Camera) []*fc.TCPClient {
-	t.Helper()
-
-	clients := make([]*fc.TCPClient, len(cameras))
-	for i, camera := range cameras {
-		client := fc.NewTCPClient(addr)
-		if err := client.Connect(); err != nil {
-			t.Fatalf("Failed to connect camera %d: %v", i, err)
-		}
-
-		client.SendIAMCamera(camera)
-		clients[i] = client
-	}
-	return clients
-}
-
-func ClientCleanUp(t *testing.T, clients ...*fc.TCPClient) {
-	t.Helper()
-	for _, client := range clients {
-		if client != nil {
-			client.Disconnect()
-		}
-	}
-}
-
-func AssertTicket(t *testing.T, reader *bufio.Reader, expectedTicket repo.Ticket) {
-	t.Helper()
-
-	msgType, _ := reader.ReadByte()
-	if msgType != byte(srv.TICKET_RESP) {
-		t.Fatalf("Illegal Message Type/Code")
-	}
-
-	recievedTicket, err := srv.ParseTicket(reader)
-	if err != nil {
-		t.Fatalf("Error Parsing Ticket. Wrong Message")
-	}
-
-	if recievedTicket != expectedTicket {
-		t.Fatalf("ExpectedTicket %v and Got %v", expectedTicket, recievedTicket)
-	}
 }

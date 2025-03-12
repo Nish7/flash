@@ -1,4 +1,4 @@
-package repository
+package server
 
 import (
 	"sync"
@@ -9,24 +9,6 @@ type Store interface {
 	GetObservations(plate string) []Observation
 	GetTickets(plate string) []Ticket
 	AddTicket(ticket Ticket)
-}
-
-type Observation struct {
-	Plate     string
-	Road      uint16
-	Mile      uint16
-	Timestamp uint32
-	Limit     uint16
-}
-
-type Ticket struct {
-	Plate      string
-	Road       uint16
-	Mile1      uint16
-	Timestamp1 uint32
-	Mile2      uint16
-	Timestamp2 uint32
-	Speed      uint16
 }
 
 type InMemoryStore struct {
