@@ -60,12 +60,11 @@ func (s *Server) Accept() {
 }
 
 func (s *Server) HandleConnection(conn net.Conn) {
-	defer conn.Close()
 	reader := bufio.NewReader(conn)
-
-	// connection state
-	heartbeatRegistered := false
 	clientType := UNKNOWN
+	heartbeatRegistered := false
+
+	defer s.CleanUpClient(conn, &clientType)
 
 	for {
 		msgType, err := ReadMsgType(reader)
@@ -86,6 +85,16 @@ func (s *Server) HandleConnection(conn net.Conn) {
 		default:
 			log.Printf("[%s] Unknown message type: %X\n\n", conn.RemoteAddr().String(), msgType)
 		}
+	}
+}
+
+func (s *Server) CleanUpClient(conn net.Conn, client *ClientType) {
+	defer conn.Close()
+	switch *client {
+	case CAMERA:
+		delete(s.cameras, conn)
+	case DISPATCHER:
+		delete(s.dispatchers, conn)
 	}
 }
 

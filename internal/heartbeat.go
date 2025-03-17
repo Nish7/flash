@@ -52,7 +52,7 @@ func (s *Server) sendHeartbeat(conn net.Conn, decisecond uint32) {
 		case <-ticker.C:
 			_, err := conn.Write(heartbeatMsg)
 			if err != nil {
-				fmt.Errorf("[%s] Failed to send heartbeat: %v", conn.RemoteAddr().String(), err)
+				fmt.Printf("[%s] Failed to send heartbeat: %v\n", conn.RemoteAddr().String(), err)
 				return
 			}
 			log.Printf("[%s] Heartbeat sent", conn.RemoteAddr().String())
