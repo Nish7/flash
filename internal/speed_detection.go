@@ -65,7 +65,7 @@ func (s *Server) DispatchTicket(conn net.Conn, ticket *Ticket) error {
 		}
 	}
 	fmt.Printf("No Dispatcher Founk. Adding to the Pending Queue")
-	s.pending_queue.PushBack(ticket)
+	s.pending_queue = append(s.pending_queue, *ticket)
 	return nil
 }
 
