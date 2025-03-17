@@ -9,21 +9,23 @@ import (
 )
 
 type Server struct {
-	quitch      chan struct{}
-	listener    net.Listener
-	addr        string
-	store       Store
-	cameras     map[net.Conn]Camera
-	dispatchers map[net.Conn]Dispatcher
+	quitch        chan struct{}
+	listener      net.Listener
+	addr          string
+	store         Store
+	cameras       map[net.Conn]Camera
+	dispatchers   map[net.Conn]Dispatcher
+	pending_queue []Ticket
 }
 
 func NewServer(addr string, store Store) *Server {
 	return &Server{
-		quitch:      make(chan struct{}),
-		addr:        addr,
-		store:       store,
-		cameras:     make(map[net.Conn]Camera),
-		dispatchers: make(map[net.Conn]Dispatcher),
+		quitch:        make(chan struct{}),
+		addr:          addr,
+		store:         store,
+		cameras:       make(map[net.Conn]Camera),
+		dispatchers:   make(map[net.Conn]Dispatcher),
+		pending_queue: []Ticket{},
 	}
 }
 

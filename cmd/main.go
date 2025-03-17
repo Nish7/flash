@@ -1,8 +1,9 @@
 package main
 
 import (
-	server "github.com/nish7/flash/internal"
 	"log"
+
+	server "github.com/nish7/flash/internal"
 )
 
 func main() {

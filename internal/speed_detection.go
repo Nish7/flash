@@ -54,23 +54,23 @@ func (s *Server) handleSpeedViolations(conn net.Conn, obs Observation) error {
 }
 
 func (s *Server) DispatchTicket(conn net.Conn, ticket *Ticket) error {
+	// check all active dispatcher
 	for c, disp := range s.dispatchers {
 		if slices.Contains(disp.Roads, ticket.Road) {
-			s.store.AddTicket(*ticket)
 			err := s.SendTicket(c, ticket)
 			if err != nil {
 				return err
-			} else {
-				log.Printf("[%s] Ticket sent for %s on road %d [%v]\n", conn.RemoteAddr().String(), ticket.Plate, ticket.Road, ticket)
-				return nil
 			}
+			log.Printf("[%s] Ticket sent for %s on road %d [%v]\n", conn.RemoteAddr().String(), ticket.Plate, ticket.Road, ticket)
 		}
 	}
-
-	return fmt.Errorf("No Dispatcher Found")
+	fmt.Printf("No Dispatcher Founk. Adding to the Pending Queue")
+	s.pending_queue.PushBack(ticket)
+	return nil
 }
 
 func (s *Server) SendTicket(conn net.Conn, ticket *Ticket) error {
+	s.store.AddTicket(*ticket)
 	_, err := conn.Write(EncodeTicket(ticket))
 	return err
 }
