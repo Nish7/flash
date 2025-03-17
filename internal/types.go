@@ -38,7 +38,7 @@ type Observation struct {
 }
 
 type WantHeartbeat struct {
-	interval uint32
+	Interval uint32
 }
 
 type Ticket struct {

@@ -3,6 +3,7 @@ package test
 import (
 	"bufio"
 	"testing"
+	"time"
 
 	srv "github.com/nish7/flash/internal"
 )
@@ -63,5 +64,21 @@ func AssertTicket(t *testing.T, reader *bufio.Reader, expectedTicket srv.Ticket)
 
 	if recievedTicket != expectedTicket {
 		t.Fatalf("ExpectedTicket %v and Got %v", expectedTicket, recievedTicket)
+	}
+}
+
+func AssertHeartbeat(t *testing.T, reader *bufio.Reader, expectedInterval uint32) {
+	t.Helper()
+
+	start := time.Now()
+	msgType, _ := reader.ReadByte()
+	if msgType != byte(srv.HEARTBEAT_RESP) {
+		t.Fatalf("Illegal Message Type/Code: got %v, want %v", msgType, srv.HEARTBEAT_RESP)
+	}
+
+	elapsed := time.Since(start)
+	expected := time.Duration(expectedInterval*100) * time.Millisecond
+	if elapsed < expected-50*time.Millisecond || elapsed > expected+50*time.Millisecond {
+		t.Fatalf("Heartbeat interval mismatch: got %v, want ~%v", elapsed, expected)
 	}
 }
