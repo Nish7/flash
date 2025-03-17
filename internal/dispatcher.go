@@ -20,29 +20,29 @@ func (s *Server) HandleDispatcherReq(conn net.Conn, reader *bufio.Reader) {
 	log.Printf("[%s] Dispatcher Recived %v\n", conn.RemoteAddr().String(), d)
 	s.dispatchers[conn] = d
 
-	err = s.checkPendingTicket(conn, d)
+	err = s.checkPendingTickets(conn, d)
 	if err != nil {
 		log.Printf("Failed to parse request %v", err)
 		return
 	}
+
 	return
 }
 
 // TODO: improve the perfomance
-func (s *Server) checkPendingTicket(conn net.Conn, d Dispatcher) error {
+func (s *Server) checkPendingTickets(conn net.Conn, d Dispatcher) error {
+	log.Printf("[%s] Checking Pending Tickets [%v]\n", conn.RemoteAddr().String(), s.pending_queue)
 	var newQueue []Ticket
 	var errors []error
 
 	for _, ticket := range s.pending_queue {
 		if slices.Contains(d.Roads, ticket.Road) {
+			log.Printf("[%s] Dispatcher [%v] is available; Sending ticket [%v]\n", conn.RemoteAddr().String(), d, ticket)
 			if err := s.SendTicket(conn, &ticket); err != nil {
 				errors = append(errors, fmt.Errorf("failed to send ticket %v: %w", ticket, err))
 				newQueue = append(newQueue, ticket)
 				continue
 			}
-
-			addr := conn.RemoteAddr().String()
-			fmt.Printf("[%s] Dispatcher [%v] is available; Sending ticket [%v]\n", addr, d, ticket)
 		} else {
 			newQueue = append(newQueue, ticket)
 		}

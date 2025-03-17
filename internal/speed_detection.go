@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"slices"
@@ -55,6 +54,7 @@ func (s *Server) handleSpeedViolations(conn net.Conn, obs Observation) error {
 
 func (s *Server) DispatchTicket(conn net.Conn, ticket *Ticket) error {
 	// check all active dispatcher
+	log.Printf("[%s] Dispatching Ticket [%v]\n", conn.RemoteAddr().String(), ticket)
 	for c, disp := range s.dispatchers {
 		if slices.Contains(disp.Roads, ticket.Road) {
 			err := s.SendTicket(c, ticket)
@@ -64,7 +64,7 @@ func (s *Server) DispatchTicket(conn net.Conn, ticket *Ticket) error {
 			log.Printf("[%s] Ticket sent for %s on road %d [%v]\n", conn.RemoteAddr().String(), ticket.Plate, ticket.Road, ticket)
 		}
 	}
-	fmt.Printf("No Dispatcher Founk. Adding to the Pending Queue")
+	log.Printf("[%s] No Dispatcher Found. Adding to the Pending Queue\n", conn.RemoteAddr().String())
 	s.pending_queue = append(s.pending_queue, *ticket)
 	return nil
 }
