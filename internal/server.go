@@ -60,9 +60,11 @@ func (s *Server) Accept() {
 }
 
 func (s *Server) HandleConnection(conn net.Conn) {
-	defer conn.Close()
 	reader := bufio.NewReader(conn)
+	clientType := UNKNOWN
 	heartbeatRegistered := false
+
+	defer s.CleanUpClient(conn, &clientType)
 
 	for {
 		msgType, err := ReadMsgType(reader)
@@ -73,14 +75,26 @@ func (s *Server) HandleConnection(conn net.Conn) {
 
 		switch msgType {
 		case IAMCAMERA_REQ:
-			s.HandleCameraReq(conn, reader)
+			s.HandleCameraReq(conn, reader, &clientType)
 		case IAMDISPATCHER_REQ:
-			s.HandleDispatcherReq(conn, reader)
+			s.HandleDispatcherReq(conn, reader, &clientType)
+		case PLATE_REQ:
+			s.HandlePlateReq(conn, reader, &clientType)
 		case WANTHEARTBEAT_REQ:
-			s.WantHeatbeatHandler(conn, reader, &heartbeatRegistered)
+			s.WantHeatbeatHandler(conn, reader, &heartbeatRegistered, &clientType)
 		default:
-			fmt.Printf("Unknown message type: %X\n", msgType)
+			log.Printf("[%s] Unknown message type: %X\n\n", conn.RemoteAddr().String(), msgType)
 		}
+	}
+}
+
+func (s *Server) CleanUpClient(conn net.Conn, client *ClientType) {
+	defer conn.Close()
+	switch *client {
+	case CAMERA:
+		delete(s.cameras, conn)
+	case DISPATCHER:
+		delete(s.dispatchers, conn)
 	}
 }
 

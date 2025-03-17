@@ -12,6 +12,14 @@ const (
 	HEARTBEAT_RESP    MsgType = 0x41
 )
 
+type ClientType int
+
+const (
+	UNKNOWN ClientType = iota
+	CAMERA
+	DISPATCHER
+)
+
 // model
 
 type Camera struct {

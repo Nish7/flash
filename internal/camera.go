@@ -2,13 +2,15 @@ package server
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"net"
 )
 
-func (s *Server) HandleCameraReq(conn net.Conn, reader *bufio.Reader) {
-	defer delete(s.cameras, conn)
+func (s *Server) HandleCameraReq(conn net.Conn, reader *bufio.Reader, clientType *ClientType) {
+	if *clientType != UNKNOWN {
+		log.Printf("[%s] Client is already registered.", conn.RemoteAddr().String())
+		return
+	}
 
 	camera, err := ParseCameraRequest(reader)
 	if err != nil {
@@ -19,46 +21,37 @@ func (s *Server) HandleCameraReq(conn net.Conn, reader *bufio.Reader) {
 	// register camera
 	log.Printf("[%s] Camera: Recived %v\n", conn.RemoteAddr().String(), camera)
 	s.cameras[conn] = camera
+	*clientType = CAMERA
 
-	err = s.listenForPlates(conn, reader, camera)
-	if err != nil {
-		log.Printf("%v", err)
+	return
+}
+
+func (s *Server) HandlePlateReq(conn net.Conn, reader *bufio.Reader, client *ClientType) {
+	if *client != CAMERA {
+		log.Printf("Camera not registered yet for plate request")
 		return
 	}
-}
 
-func (s *Server) listenForPlates(conn net.Conn, reader *bufio.Reader, camera Camera) error {
-	for {
-		msgType, err := ReadMsgType(reader)
-		if err != nil {
-			return err
-		}
-
-		if msgType != PLATE_REQ {
-			return fmt.Errorf("Illegal Message type")
-		}
-
-		plate, err := ParsePlateRecord(reader)
-		if err != nil {
-			return fmt.Errorf("Failed to Parse Request  %v", err)
-		}
-
-		log.Printf("[%s] Plate Record Receieved: %v from Camera %v\n", conn.RemoteAddr().String(), plate, camera)
-		err = s.handlePlateReq(conn, camera, plate)
-		if err != nil {
-			return fmt.Errorf("Failed to Handle Plate Records: %v", err)
-		}
+	plate, err := ParsePlateRecord(reader)
+	if err != nil {
+		log.Printf("Failed to Parse Request  %v", err)
+		return
 	}
-}
 
-func (s *Server) handlePlateReq(conn net.Conn, cam Camera, plate Plate) error {
+	cam, ok := s.cameras[conn]
+	if !ok {
+		log.Printf("Camera not found\n")
+		return
+	}
+
+	log.Printf("[%s] Plate Record Receieved: %v from Camera %v\n", conn.RemoteAddr().String(), plate, cam)
+
 	observation := Observation{Plate: plate.Plate, Road: cam.Road, Mile: cam.Mile, Timestamp: plate.Timestamp, Limit: cam.Limit}
 	s.store.AddObservation(observation)
 
-	err := s.handleSpeedViolations(conn, observation)
+	err = s.handleSpeedViolations(conn, observation)
 	if err != nil {
-		return err
+		log.Printf("Failed to Handle Plate Records: %v", err)
+		return
 	}
-
-	return nil
 }

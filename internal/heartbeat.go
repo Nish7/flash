@@ -8,9 +8,14 @@ import (
 	"time"
 )
 
-func (s *Server) WantHeatbeatHandler(conn net.Conn, reader *bufio.Reader, isHeartbeatRegistered *bool) {
+func (s *Server) WantHeatbeatHandler(conn net.Conn, reader *bufio.Reader, isHeartbeatRegistered *bool, client *ClientType) {
+	if *client == UNKNOWN {
+		log.Printf("[%s] Client is not registered.", conn.RemoteAddr().String())
+		return
+	}
+
 	if *isHeartbeatRegistered {
-		log.Printf("[%s] Heartbeat is already registed.", conn.RemoteAddr().String())
+		log.Printf("[%s] Heartbeat is already registered.", conn.RemoteAddr().String())
 		return
 	}
 
@@ -33,7 +38,10 @@ func (s *Server) WantHeatbeatHandler(conn net.Conn, reader *bufio.Reader, isHear
 
 func (s *Server) sendHeartbeat(conn net.Conn, decisecond uint32) {
 	interval := time.Duration(decisecond*100) * time.Millisecond
-	log.Printf("[%s] Sending %d heartbeats every second", conn.RemoteAddr().String(), interval)
+	log.Printf("[%s] Sending heartbeat every %.1f seconds",
+		conn.RemoteAddr().String(),
+		float64(interval)/float64(time.Second),
+	)
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
@@ -44,7 +52,7 @@ func (s *Server) sendHeartbeat(conn net.Conn, decisecond uint32) {
 		case <-ticker.C:
 			_, err := conn.Write(heartbeatMsg)
 			if err != nil {
-				fmt.Errorf("[%s] Failed to send heartbeat: %v", conn.RemoteAddr().String(), err)
+				fmt.Printf("[%s] Failed to send heartbeat: %v\n", conn.RemoteAddr().String(), err)
 				return
 			}
 			log.Printf("[%s] Heartbeat sent", conn.RemoteAddr().String())

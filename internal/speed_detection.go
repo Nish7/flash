@@ -62,6 +62,7 @@ func (s *Server) DispatchTicket(conn net.Conn, ticket *Ticket) error {
 				return err
 			}
 			log.Printf("[%s] Ticket sent for %s on road %d [%v]\n", conn.RemoteAddr().String(), ticket.Plate, ticket.Road, ticket)
+			return nil
 		}
 	}
 	log.Printf("[%s] No Dispatcher Found. Adding to the Pending Queue\n", conn.RemoteAddr().String())
