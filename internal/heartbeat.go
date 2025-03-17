@@ -15,7 +15,7 @@ func (s *Server) WantHeatbeatHandler(conn net.Conn, reader *bufio.Reader, isHear
 	}
 
 	if *isHeartbeatRegistered {
-		log.Printf("[%s] Heartbeat is already registed.", conn.RemoteAddr().String())
+		log.Printf("[%s] Heartbeat is already registered.", conn.RemoteAddr().String())
 		return
 	}
 
@@ -38,7 +38,10 @@ func (s *Server) WantHeatbeatHandler(conn net.Conn, reader *bufio.Reader, isHear
 
 func (s *Server) sendHeartbeat(conn net.Conn, decisecond uint32) {
 	interval := time.Duration(decisecond*100) * time.Millisecond
-	log.Printf("[%s] Sending %d heartbeats every second", conn.RemoteAddr().String(), interval)
+	log.Printf("[%s] Sending heartbeat every %.1f seconds",
+		conn.RemoteAddr().String(),
+		float64(interval)/float64(time.Second),
+	)
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
