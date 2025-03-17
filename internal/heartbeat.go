@@ -9,8 +9,8 @@ import (
 )
 
 func (s *Server) WantHeatbeatHandler(conn net.Conn, reader *bufio.Reader, isHeartbeatRegistered *bool, client *ClientType) {
-	if *client != UNKNOWN {
-		log.Printf("[%s] Client is not registed.", conn.RemoteAddr().String())
+	if *client == UNKNOWN {
+		log.Printf("[%s] Client is not registered.", conn.RemoteAddr().String())
 		return
 	}
 

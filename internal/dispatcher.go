@@ -9,7 +9,6 @@ import (
 )
 
 func (s *Server) HandleDispatcherReq(conn net.Conn, reader *bufio.Reader, client *ClientType) {
-	defer delete(s.cameras, conn)
 	if *client != UNKNOWN {
 		log.Printf("Client is alredy registered on this connection")
 		return

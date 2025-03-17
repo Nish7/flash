@@ -82,3 +82,29 @@ func AssertHeartbeat(t *testing.T, reader *bufio.Reader, expectedInterval uint32
 		t.Fatalf("Heartbeat interval mismatch: got %v, want ~%v", elapsed, expected)
 	}
 }
+
+func AssertNoHeartbeat(t *testing.T, reader *bufio.Reader, timeout time.Duration) {
+	t.Helper()
+
+	done := make(chan struct{})
+	var receivedByte byte
+
+	go func() {
+		b, err := reader.ReadByte()
+		if err == nil {
+			receivedByte = b
+		}
+		close(done)
+	}()
+
+	select {
+	case <-time.After(timeout):
+		return
+	case <-done:
+		if receivedByte == byte(srv.HEARTBEAT_RESP) {
+			t.Fatalf("Received unexpected heartbeat message: got type %v", receivedByte)
+		} else {
+			t.Fatalf("Received unexpected message: got type %v, expected no messages", receivedByte)
+		}
+	}
+}

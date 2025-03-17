@@ -7,7 +7,6 @@ import (
 )
 
 func (s *Server) HandleCameraReq(conn net.Conn, reader *bufio.Reader, clientType *ClientType) {
-	defer delete(s.cameras, conn) // todo: this is useless; why did i add this?
 	if *clientType != UNKNOWN {
 		log.Printf("[%s] Client is already registered.", conn.RemoteAddr().String())
 		return
