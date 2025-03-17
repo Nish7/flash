@@ -63,6 +63,7 @@ func (s *Server) HandleConnection(conn net.Conn) {
 	defer conn.Close()
 	reader := bufio.NewReader(conn)
 	heartbeatRegistered := false
+	isClientRegistered := false
 
 	for {
 		msgType, err := ReadMsgType(reader)
@@ -73,11 +74,13 @@ func (s *Server) HandleConnection(conn net.Conn) {
 
 		switch msgType {
 		case IAMCAMERA_REQ:
-			s.HandleCameraReq(conn, reader)
+			s.HandleCameraReq(conn, reader, &isClientRegistered)
 		case IAMDISPATCHER_REQ:
-			s.HandleDispatcherReq(conn, reader)
+			s.HandleDispatcherReq(conn, reader, &isClientRegistered)
+		case PLATE_REQ:
+			s.HandlePlateReq(conn, reader, &isClientRegistered)
 		case WANTHEARTBEAT_REQ:
-			s.WantHeatbeatHandler(conn, reader, &heartbeatRegistered)
+			s.WantHeatbeatHandler(conn, reader, &heartbeatRegistered, &isClientRegistered)
 		default:
 			fmt.Printf("Unknown message type: %X\n", msgType)
 		}
