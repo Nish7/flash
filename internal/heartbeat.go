@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-func (s *Server) WantHeatbeatHandler(conn net.Conn, reader *bufio.Reader, isHeartbeatRegistered *bool, isClientRegistered *bool) {
-	if !*isClientRegistered {
+func (s *Server) WantHeatbeatHandler(conn net.Conn, reader *bufio.Reader, isHeartbeatRegistered *bool, client *ClientType) {
+	if *client != UNKNOWN {
 		log.Printf("[%s] Client is not registed.", conn.RemoteAddr().String())
 		return
 	}

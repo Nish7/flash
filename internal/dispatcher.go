@@ -8,9 +8,9 @@ import (
 	"slices"
 )
 
-func (s *Server) HandleDispatcherReq(conn net.Conn, reader *bufio.Reader, isClientRegistered *bool) {
+func (s *Server) HandleDispatcherReq(conn net.Conn, reader *bufio.Reader, client *ClientType) {
 	defer delete(s.cameras, conn)
-	if *isClientRegistered {
+	if *client != UNKNOWN {
 		log.Printf("Client is alredy registered on this connection")
 		return
 	}
@@ -23,7 +23,7 @@ func (s *Server) HandleDispatcherReq(conn net.Conn, reader *bufio.Reader, isClie
 
 	log.Printf("[%s] Dispatcher Recived %v\n", conn.RemoteAddr().String(), d)
 	s.dispatchers[conn] = d
-	*isClientRegistered = true
+	*client = DISPATCHER
 
 	err = s.checkPendingTickets(conn, d)
 	if err != nil {

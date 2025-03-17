@@ -6,9 +6,10 @@ import (
 	"net"
 )
 
-func (s *Server) HandleCameraReq(conn net.Conn, reader *bufio.Reader, isClientRegistered *bool) {
-	defer delete(s.cameras, conn) // fix this
-	if *isClientRegistered {
+func (s *Server) HandleCameraReq(conn net.Conn, reader *bufio.Reader, clientType *ClientType) {
+	defer delete(s.cameras, conn) // todo: this is useless; why did i add this?
+	if *clientType != UNKNOWN {
+		log.Printf("[%s] Client is already registered.", conn.RemoteAddr().String())
 		return
 	}
 
@@ -21,14 +22,14 @@ func (s *Server) HandleCameraReq(conn net.Conn, reader *bufio.Reader, isClientRe
 	// register camera
 	log.Printf("[%s] Camera: Recived %v\n", conn.RemoteAddr().String(), camera)
 	s.cameras[conn] = camera
-	*isClientRegistered = true
+	*clientType = CAMERA
 
 	return
 }
 
-func (s *Server) HandlePlateReq(conn net.Conn, reader *bufio.Reader, isClientRegistered *bool) {
-	if !*isClientRegistered {
-		log.Printf("Client not registered yet for plate request")
+func (s *Server) HandlePlateReq(conn net.Conn, reader *bufio.Reader, client *ClientType) {
+	if *client != CAMERA {
+		log.Printf("Camera not registered yet for plate request")
 		return
 	}
 
