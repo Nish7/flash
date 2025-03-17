@@ -7,7 +7,9 @@ const (
 	IAMCAMERA_REQ     MsgType = 0x80
 	IAMDISPATCHER_REQ MsgType = 0x81
 	PLATE_REQ         MsgType = 0x20
+	WANTHEARTBEAT_REQ MsgType = 0x40
 	TICKET_RESP       MsgType = 0x21
+	HEARTBEAT_RESP    MsgType = 0x41
 )
 
 // model
@@ -33,6 +35,10 @@ type Observation struct {
 	Mile      uint16
 	Timestamp uint32
 	Limit     uint16
+}
+
+type WantHeartbeat struct {
+	interval uint32
 }
 
 type Ticket struct {
