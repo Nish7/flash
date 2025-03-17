@@ -31,6 +31,20 @@ func (c *TCPClient) Disconnect() {
 	c.Conn.Close()
 }
 
+func (c *TCPClient) SendWantHeartbeat(wh WantHeartbeat) {
+	msg := make([]byte, 1+4)
+	msg[0] = byte(WANTHEARTBEAT_REQ)
+	binary.BigEndian.PutUint32(msg[1:], wh.Interval)
+
+	_, err := c.Conn.Write(msg)
+	if err != nil {
+		fmt.Printf("Error: sending WantHeartbeat message: %v\n", err)
+		return
+	}
+
+	fmt.Printf("Client -> Sent WantHeartbeat: %v - hex[% X]\n", wh, msg)
+}
+
 func (c *TCPClient) SendPlateRecord(plate Plate) {
 	plateBytes := []byte(plate.Plate)
 	plateLen := len(plateBytes)

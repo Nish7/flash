@@ -68,6 +68,17 @@ func ParseCameraRequest(reader *bufio.Reader) (Camera, error) {
 	return data, nil
 }
 
+func ParseWantHeartbeat(reader *bufio.Reader) (WantHeartbeat, error) {
+	var data WantHeartbeat
+	err := binary.Read(reader, binary.BigEndian, &data)
+
+	if err != nil {
+		return data, fmt.Errorf("Error Parsing WantHeartbeat %x", err)
+	}
+
+	return data, nil
+}
+
 // used by integration_testing
 func ParseTicket(reader *bufio.Reader) (Ticket, error) {
 	ticket := Ticket{}
@@ -109,6 +120,10 @@ func EncodeTicket(ticket *Ticket) []byte {
 	binary.BigEndian.PutUint16(msg[16+plateLen:18+plateLen], ticket.Speed)
 
 	return msg
+}
+
+func EncodeHeartbeat() []byte {
+	return []byte{byte(HEARTBEAT_RESP)}
 }
 
 func ParsePlateRecord(reader *bufio.Reader) (Plate, error) {

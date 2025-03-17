@@ -31,6 +31,31 @@ func TestMain(t *testing.M) {
 	os.Exit(code)
 }
 
+func TestHeartbeat(t *testing.T) {
+	// cameras := []srv.Camera{{Road: 124, Mile: 8, Limit: 60}}
+	dispatchers := []srv.Dispatcher{{Roads: []uint16{124, 2}}}
+
+	dispatcherClients := SetupDispatchers(t, addr, dispatchers...)
+	// cameraClients := SetupCameras(t, addr, cameras...)
+
+	d1 := dispatcherClients[0]
+	// c1 := cameraClients[0]
+
+	defer ClientCleanUp(t, dispatcherClients...)
+	// defer ClientCleanUp(t, cameraClients...)
+
+	// Send Heartbeats
+	d1.SendWantHeartbeat(srv.WantHeartbeat{Interval: 25})
+	// c1.SendWantHeartbeat(srv.WantHeartbeat{Interval: 0})
+
+	// assertions
+	readerd1 := bufio.NewReader(d1.Conn)
+
+	AssertHeartbeat(t, readerd1, 25)
+	AssertHeartbeat(t, readerd1, 25)
+	AssertHeartbeat(t, readerd1, 25)
+}
+
 func TestPendingTicketGeneration(t *testing.T) {
 	cameras := []srv.Camera{
 		{Road: 124, Mile: 8, Limit: 60},
