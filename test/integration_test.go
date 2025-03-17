@@ -31,6 +31,37 @@ func TestMain(t *testing.M) {
 	os.Exit(code)
 }
 
+func TestPendingTicketGeneration(t *testing.T) {
+	cameras := []srv.Camera{
+		{Road: 124, Mile: 8, Limit: 60},
+		{Road: 124, Mile: 9, Limit: 60},
+		{Road: 125, Mile: 9, Limit: 60},
+	}
+	cameraClients := SetupCameras(t, addr, cameras...)
+	c1, c2, c3 := cameraClients[0], cameraClients[1], cameraClients[2]
+
+	defer ClientCleanUp(t, cameraClients...)
+
+	// Send Plate Observations
+	c1.SendPlateRecord(srv.Plate{Plate: "UN1X", Timestamp: 0})
+	c2.SendPlateRecord(srv.Plate{Plate: "UN1X", Timestamp: 45})
+	c3.SendPlateRecord(srv.Plate{Plate: "UN1X", Timestamp: 0})
+
+	time.Sleep(2000 * time.Millisecond)
+
+	dispatchers := []srv.Dispatcher{{Roads: []uint16{124, 2}}}
+	dispatcherClients := SetupDispatchers(t, addr, dispatchers...)
+	d1 := dispatcherClients[0]
+	defer ClientCleanUp(t, dispatcherClients...)
+
+	time.Sleep(2000 * time.Millisecond)
+
+	// assert the ticket
+	reader := bufio.NewReader(d1.Conn)
+	expectedTicket := srv.Ticket{Plate: "UN1X", Road: 124, Mile1: 8, Mile2: 9, Timestamp1: 0, Timestamp2: 45, Speed: 8000}
+	AssertTicket(t, reader, expectedTicket)
+}
+
 func TestSimpleTicketGeneration(t *testing.T) {
 	// setup clients
 	dispatchers := []srv.Dispatcher{{Roads: []uint16{123, 2}}}
