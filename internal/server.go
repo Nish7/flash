@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"sync"
 )
 
 type Server struct {
@@ -16,6 +17,7 @@ type Server struct {
 	cameras       map[net.Conn]Camera
 	dispatchers   map[net.Conn]Dispatcher
 	pending_queue []Ticket
+	slock         sync.RWMutex
 }
 
 func NewServer(addr string, store Store) *Server {
@@ -92,9 +94,13 @@ func (s *Server) CleanUpClient(conn net.Conn, client *ClientType) {
 	defer conn.Close()
 	switch *client {
 	case CAMERA:
+		s.slock.Lock()
 		delete(s.cameras, conn)
+		s.slock.Unlock()
 	case DISPATCHER:
+		s.slock.Lock()
 		delete(s.dispatchers, conn)
+		s.slock.Unlock()
 	}
 }
 

@@ -7,10 +7,11 @@ import (
 )
 
 func (s *Server) handleSpeedViolations(conn net.Conn, obs Observation) error {
-	log.Printf("[%s] Prior Observations [%s]: %v", conn.RemoteAddr().String(), obs.Plate, s.store.GetObservations(obs.Plate))
+	observations := s.store.GetObservations(obs.Plate)
+	log.Printf("[%s] Prior Observations [%s]: %v", conn.RemoteAddr().String(), obs.Plate, observations)
 
 	// for all prior observation check any speed violations
-	for _, preObs := range s.store.GetObservations(obs.Plate) {
+	for _, preObs := range observations {
 		if preObs.Road != obs.Road || preObs.Timestamp == obs.Timestamp {
 			continue
 		}
@@ -55,6 +56,8 @@ func (s *Server) handleSpeedViolations(conn net.Conn, obs Observation) error {
 func (s *Server) DispatchTicket(conn net.Conn, ticket *Ticket) error {
 	// check all active dispatcher
 	log.Printf("[%s] Dispatching Ticket [%v]\n", conn.RemoteAddr().String(), ticket)
+	s.slock.Lock()
+	defer s.slock.Unlock()
 	for c, disp := range s.dispatchers {
 		if slices.Contains(disp.Roads, ticket.Road) {
 			err := s.SendTicket(c, ticket)

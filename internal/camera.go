@@ -20,7 +20,9 @@ func (s *Server) HandleCameraReq(conn net.Conn, reader *bufio.Reader, clientType
 
 	// register camera
 	log.Printf("[%s] Camera: Recived %v\n", conn.RemoteAddr().String(), camera)
+	s.slock.Lock()
 	s.cameras[conn] = camera
+	s.slock.Unlock()
 	*clientType = CAMERA
 
 	return
@@ -38,7 +40,9 @@ func (s *Server) HandlePlateReq(conn net.Conn, reader *bufio.Reader, client *Cli
 		return
 	}
 
+	s.slock.Lock()
 	cam, ok := s.cameras[conn]
+	s.slock.Unlock()
 	if !ok {
 		log.Printf("Camera not found\n")
 		return
