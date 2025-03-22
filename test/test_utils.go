@@ -49,6 +49,25 @@ func ClientCleanUp(t *testing.T, clients ...*srv.TCPClient) {
 	}
 }
 
+func AssertError(t *testing.T, reader *bufio.Reader, expectedError srv.ErrorResp) {
+	t.Helper()
+
+	msgType, _ := reader.ReadByte()
+	if msgType != byte(srv.ERROR_RESP) {
+		t.Fatalf("Illegal Message Type/Code")
+	}
+
+	recievedError, err := srv.ParseError(reader)
+	if err != nil {
+		t.Fatalf("Error Parsing Ticket. Wrong Message")
+	}
+
+	if recievedError != expectedError {
+		t.Fatalf("ExpectedError %v and Got %v", expectedError, recievedError)
+	}
+
+}
+
 func AssertTicket(t *testing.T, reader *bufio.Reader, expectedTicket srv.Ticket) {
 	t.Helper()
 

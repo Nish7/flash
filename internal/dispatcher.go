@@ -8,16 +8,14 @@ import (
 	"slices"
 )
 
-func (s *Server) HandleDispatcherReq(conn net.Conn, reader *bufio.Reader, client *ClientType) {
+func (s *Server) HandleDispatcherReq(conn net.Conn, reader *bufio.Reader, client *ClientType) error {
 	if *client != UNKNOWN {
-		log.Printf("Client is alredy registered on this connection")
-		return
+		return fmt.Errorf("Client is alredy registered on this connection")
 	}
 
 	d, err := ParseDispatcherRecord(reader)
 	if err != nil {
-		log.Printf("Failed to parse request %v", err)
-		return
+		return fmt.Errorf("Failed to parse request %v", err)
 	}
 
 	log.Printf("[%s] Dispatcher Recived %v\n", conn.RemoteAddr().String(), d)
@@ -28,11 +26,10 @@ func (s *Server) HandleDispatcherReq(conn net.Conn, reader *bufio.Reader, client
 
 	err = s.checkPendingTickets(conn, d)
 	if err != nil {
-		log.Printf("Failed to parse request %v", err)
-		return
+		return fmt.Errorf("Failed to parse request %v", err)
 	}
 
-	return
+	return nil
 }
 
 // TODO: improve the perfomance
@@ -44,6 +41,7 @@ func (s *Server) checkPendingTickets(conn net.Conn, d Dispatcher) error {
 	for _, ticket := range s.pending_queue {
 		if slices.Contains(d.Roads, ticket.Road) {
 			log.Printf("[%s] Dispatcher [%v] is available; Sending ticket [%v]\n", conn.RemoteAddr().String(), d, ticket)
+			// TODO: Assuming only one dispatcher per road
 			if err := s.SendTicket(conn, &ticket); err != nil {
 				errors = append(errors, fmt.Errorf("failed to send ticket %v: %w", ticket, err))
 				newQueue = append(newQueue, ticket)

@@ -126,6 +126,27 @@ func EncodeHeartbeat() []byte {
 	return []byte{byte(HEARTBEAT_RESP)}
 }
 
+func EncodeError(errMsg string) []byte {
+	errLen := len(errMsg)
+	msg := make([]byte, 1+1+errLen)
+
+	msg[0] = byte(ERROR_RESP)
+	msg[1] = byte(errLen)
+	copy(msg[2:2+errLen], errMsg)
+
+	return msg
+}
+
+func ParseError(reader *bufio.Reader) (ErrorResp, error) {
+	errResp := ErrorResp{}
+	errMsg, err := ParseString(reader)
+	if err != err {
+		return errResp, fmt.Errorf("error reading plate (str): %w", err)
+	}
+	errResp.Msg = errMsg
+	return errResp, nil
+}
+
 func ParsePlateRecord(reader *bufio.Reader) (Plate, error) {
 	plateRecord := Plate{}
 	// read the plate value
