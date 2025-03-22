@@ -41,6 +41,7 @@ func (s *Server) checkPendingTickets(conn net.Conn, d Dispatcher) error {
 	for _, ticket := range s.pending_queue {
 		if slices.Contains(d.Roads, ticket.Road) {
 			log.Printf("[%s] Dispatcher [%v] is available; Sending ticket [%v]\n", conn.RemoteAddr().String(), d, ticket)
+			// TODO: Assuming only one dispatcher per road
 			if err := s.SendTicket(conn, &ticket); err != nil {
 				errors = append(errors, fmt.Errorf("failed to send ticket %v: %w", ticket, err))
 				newQueue = append(newQueue, ticket)
