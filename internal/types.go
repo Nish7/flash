@@ -1,5 +1,7 @@
 package server
 
+import "net"
+
 // consts
 type MsgType byte
 
@@ -10,6 +12,7 @@ const (
 	WANTHEARTBEAT_REQ MsgType = 0x40
 	TICKET_RESP       MsgType = 0x21
 	HEARTBEAT_RESP    MsgType = 0x41
+	ERROR_RESP        MsgType = 0x10
 )
 
 type ClientType int
@@ -57,4 +60,13 @@ type Ticket struct {
 	Mile2      uint16
 	Timestamp2 uint32
 	Speed      uint16
+}
+
+type Error struct {
+	Msg  string
+	Conn net.Conn
+}
+
+type ErrorResp struct {
+	Msg string
 }

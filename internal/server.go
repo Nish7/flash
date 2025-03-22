@@ -18,6 +18,7 @@ type Server struct {
 	dispatchers   map[net.Conn]Dispatcher
 	pending_queue []Ticket
 	slock         sync.RWMutex
+	err_chan      chan Error
 }
 
 func NewServer(addr string, store Store) *Server {
@@ -28,6 +29,7 @@ func NewServer(addr string, store Store) *Server {
 		cameras:       make(map[net.Conn]Camera),
 		dispatchers:   make(map[net.Conn]Dispatcher),
 		pending_queue: []Ticket{},
+		err_chan:      make(chan Error),
 	}
 }
 
@@ -41,6 +43,7 @@ func (s *Server) Start() error {
 	log.Printf("Server Listening on Port %s", s.addr)
 	s.listener = l
 	go s.Accept()
+	go s.handleErrors(s.err_chan)
 
 	<-s.quitch
 	defer l.Close()
