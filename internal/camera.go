@@ -2,20 +2,19 @@ package server
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"net"
 )
 
-func (s *Server) HandleCameraReq(conn net.Conn, reader *bufio.Reader, clientType *ClientType) {
+func (s *Server) HandleCameraReq(conn net.Conn, reader *bufio.Reader, clientType *ClientType) error {
 	if *clientType != UNKNOWN {
-		log.Printf("[%s] Client is already registered.", conn.RemoteAddr().String())
-		return
+		return fmt.Errorf("Client is already registered.")
 	}
 
 	camera, err := ParseCameraRequest(reader)
 	if err != nil {
-		log.Printf("Failed to parse request %v", err)
-		return
+		return fmt.Errorf("Failed to parse request %v", err)
 	}
 
 	// register camera
@@ -25,27 +24,24 @@ func (s *Server) HandleCameraReq(conn net.Conn, reader *bufio.Reader, clientType
 	s.slock.Unlock()
 	*clientType = CAMERA
 
-	return
+	return nil
 }
 
-func (s *Server) HandlePlateReq(conn net.Conn, reader *bufio.Reader, client *ClientType) {
+func (s *Server) HandlePlateReq(conn net.Conn, reader *bufio.Reader, client *ClientType) error {
 	if *client != CAMERA {
-		log.Printf("Camera not registered yet for plate request")
-		return
+		return fmt.Errorf("Camera not registered yet for plate request")
 	}
 
 	plate, err := ParsePlateRecord(reader)
 	if err != nil {
-		log.Printf("Failed to Parse Request  %v", err)
-		return
+		return err
 	}
 
 	s.slock.Lock()
 	cam, ok := s.cameras[conn]
 	s.slock.Unlock()
 	if !ok {
-		log.Printf("Camera not found\n")
-		return
+		return err
 	}
 
 	log.Printf("[%s] Plate Record Receieved: %v from Camera %v\n", conn.RemoteAddr().String(), plate, cam)
@@ -55,7 +51,8 @@ func (s *Server) HandlePlateReq(conn net.Conn, reader *bufio.Reader, client *Cli
 
 	err = s.handleSpeedViolations(conn, observation)
 	if err != nil {
-		log.Printf("Failed to Handle Plate Records: %v", err)
-		return
+		return fmt.Errorf("Failed to Handle Plate Records: %v", err)
 	}
+
+	return nil
 }

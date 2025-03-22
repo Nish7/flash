@@ -63,7 +63,7 @@ type Ticket struct {
 }
 
 type Error struct {
-	Msg  string
+	err  error
 	Conn net.Conn
 }
 

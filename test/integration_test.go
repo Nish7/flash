@@ -31,6 +31,32 @@ func TestMain(t *testing.M) {
 	os.Exit(code)
 }
 
+func TestHeartbeatErrorHandling(t *testing.T) {
+	cameras := []srv.Camera{{Road: 124, Mile: 8, Limit: 60}}
+	c1 := SetupCameras(t, addr, cameras...)[0]
+
+	c1.SendWantHeartbeat(srv.WantHeartbeat{Interval: 0})
+	c1.SendWantHeartbeat(srv.WantHeartbeat{Interval: 5})
+
+	// assert the error
+	defer ClientCleanUp(t, c1)
+
+	readerc1 := bufio.NewReader(c1.Conn)
+	AssertError(t, readerc1, srv.ErrorResp{Msg: "Heartbeat is already registered."})
+}
+
+func TestSimpleErrorHandling(t *testing.T) {
+	cameras := []srv.Camera{{Road: 124, Mile: 8, Limit: 60}}
+	cameraClients := SetupCameras(t, addr, cameras...)
+	cameraClients[0].SendIAMCamera(srv.Camera{Road: 124, Mile: 8, Limit: 60})
+
+	// assert the error
+	defer ClientCleanUp(t, cameraClients...)
+
+	readerc1 := bufio.NewReader(cameraClients[0].Conn)
+	AssertError(t, readerc1, srv.ErrorResp{Msg: "Client is already registered."})
+}
+
 func TestHeartbeat(t *testing.T) {
 	cameras := []srv.Camera{{Road: 124, Mile: 8, Limit: 60}}
 	dispatchers := []srv.Dispatcher{{Roads: []uint16{124, 2}}}

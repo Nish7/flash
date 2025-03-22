@@ -18,7 +18,6 @@ type Server struct {
 	dispatchers   map[net.Conn]Dispatcher
 	pending_queue []Ticket
 	slock         sync.RWMutex
-	err_chan      chan Error
 }
 
 func NewServer(addr string, store Store) *Server {
@@ -29,7 +28,6 @@ func NewServer(addr string, store Store) *Server {
 		cameras:       make(map[net.Conn]Camera),
 		dispatchers:   make(map[net.Conn]Dispatcher),
 		pending_queue: []Ticket{},
-		err_chan:      make(chan Error),
 	}
 }
 
@@ -43,7 +41,6 @@ func (s *Server) Start() error {
 	log.Printf("Server Listening on Port %s", s.addr)
 	s.listener = l
 	go s.Accept()
-	go s.handleErrors(s.err_chan)
 
 	<-s.quitch
 	defer l.Close()
@@ -80,15 +77,20 @@ func (s *Server) HandleConnection(conn net.Conn) {
 
 		switch msgType {
 		case IAMCAMERA_REQ:
-			s.HandleCameraReq(conn, reader, &clientType)
+			err = s.HandleCameraReq(conn, reader, &clientType)
 		case IAMDISPATCHER_REQ:
-			s.HandleDispatcherReq(conn, reader, &clientType)
+			err = s.HandleDispatcherReq(conn, reader, &clientType)
 		case PLATE_REQ:
-			s.HandlePlateReq(conn, reader, &clientType)
+			err = s.HandlePlateReq(conn, reader, &clientType)
 		case WANTHEARTBEAT_REQ:
-			s.WantHeatbeatHandler(conn, reader, &heartbeatRegistered, &clientType)
+			err = s.WantHeatbeatHandler(conn, reader, &heartbeatRegistered, &clientType)
 		default:
-			log.Printf("[%s] Unknown message type: %X\n\n", conn.RemoteAddr().String(), msgType)
+			err = fmt.Errorf("Unknown message type: %X\n", msgType)
+		}
+
+		if err != nil {
+			s.ErrorHandler(err, conn)
+			return
 		}
 	}
 }

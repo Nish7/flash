@@ -8,16 +8,14 @@ import (
 	"slices"
 )
 
-func (s *Server) HandleDispatcherReq(conn net.Conn, reader *bufio.Reader, client *ClientType) {
+func (s *Server) HandleDispatcherReq(conn net.Conn, reader *bufio.Reader, client *ClientType) error {
 	if *client != UNKNOWN {
-		log.Printf("Client is alredy registered on this connection")
-		return
+		return fmt.Errorf("Client is alredy registered on this connection")
 	}
 
 	d, err := ParseDispatcherRecord(reader)
 	if err != nil {
-		log.Printf("Failed to parse request %v", err)
-		return
+		return fmt.Errorf("Failed to parse request %v", err)
 	}
 
 	log.Printf("[%s] Dispatcher Recived %v\n", conn.RemoteAddr().String(), d)
@@ -28,11 +26,10 @@ func (s *Server) HandleDispatcherReq(conn net.Conn, reader *bufio.Reader, client
 
 	err = s.checkPendingTickets(conn, d)
 	if err != nil {
-		log.Printf("Failed to parse request %v", err)
-		return
+		return fmt.Errorf("Failed to parse request %v", err)
 	}
 
-	return
+	return nil
 }
 
 // TODO: improve the perfomance

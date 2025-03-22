@@ -137,6 +137,16 @@ func EncodeError(errMsg string) []byte {
 	return msg
 }
 
+func ParseError(reader *bufio.Reader) (ErrorResp, error) {
+	errResp := ErrorResp{}
+	errMsg, err := ParseString(reader)
+	if err != err {
+		return errResp, fmt.Errorf("error reading plate (str): %w", err)
+	}
+	errResp.Msg = errMsg
+	return errResp, nil
+}
+
 func ParsePlateRecord(reader *bufio.Reader) (Plate, error) {
 	plateRecord := Plate{}
 	// read the plate value

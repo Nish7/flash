@@ -8,32 +8,30 @@ import (
 	"time"
 )
 
-func (s *Server) WantHeatbeatHandler(conn net.Conn, reader *bufio.Reader, isHeartbeatRegistered *bool, client *ClientType) {
+func (s *Server) WantHeatbeatHandler(conn net.Conn, reader *bufio.Reader, isHeartbeatRegistered *bool, client *ClientType) error {
 	if *client == UNKNOWN {
-		log.Printf("[%s] Client is not registered.", conn.RemoteAddr().String())
-		return
+		return fmt.Errorf("Client is not registered.")
 	}
 
 	if *isHeartbeatRegistered {
-		log.Printf("[%s] Heartbeat is already registered.", conn.RemoteAddr().String())
-		return
+		return fmt.Errorf("Heartbeat is already registered.")
 	}
 
 	req, err := ParseWantHeartbeat(reader)
 	if err != nil {
-		log.Printf("Failed to parse request %v", err)
-		return
+		return fmt.Errorf("Failed to parse request %v", err)
 	}
 
 	*isHeartbeatRegistered = true
 	log.Printf("[%s] WantHeartbeat: Recived %v\n", conn.RemoteAddr().String(), req)
 
 	if req.Interval == 0 {
-		log.Printf("[%s] Recieved 0 inteval req. Heartbeat Disabled", conn.RemoteAddr().String())
-		return
+		log.Printf("Recieved 0 inteval req. Heartbeat Disabled")
+		return nil
 	}
 
 	go s.sendHeartbeat(conn, req.Interval)
+	return nil
 }
 
 func (s *Server) sendHeartbeat(conn net.Conn, decisecond uint32) {
@@ -52,9 +50,10 @@ func (s *Server) sendHeartbeat(conn net.Conn, decisecond uint32) {
 		case <-ticker.C:
 			_, err := conn.Write(heartbeatMsg)
 			if err != nil {
-				fmt.Printf("[%s] Failed to send heartbeat: %v\n", conn.RemoteAddr().String(), err)
+				s.ErrorHandler(fmt.Errorf("Failed to send heartbeat: %v\n", err), conn)
 				return
 			}
+
 			log.Printf("[%s] Heartbeat sent", conn.RemoteAddr().String())
 		}
 	}
