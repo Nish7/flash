@@ -2,6 +2,7 @@ package server
 
 import (
 	"log"
+	"math"
 	"net"
 	"slices"
 )
@@ -23,7 +24,7 @@ func (s *Server) handleSpeedViolations(conn net.Conn, obs Observation) error {
 		}
 
 		isSpeedViolation, speed := isSpeedViolation(obs1, obs2)
-		log.Printf("[%s] isSpeedViolation[%v] - %v\n with Obs2 %v", conn.RemoteAddr().String(), isSpeedViolation, speed, obs2)
+		log.Printf("[%s] isSpeedViolation[%v] - %v with obs1 %v and obs1", conn.RemoteAddr().String(), isSpeedViolation, speed, obs2)
 
 		if !isSpeedViolation {
 			continue
@@ -76,8 +77,8 @@ func (s *Server) SendTicket(conn net.Conn, ticket *Ticket) error {
 }
 
 func isSpeedViolation(obs1, obs2 Observation) (bool, uint16) {
-	distance := uint32(obs2.Mile - obs1.Mile)
-	time := obs2.Timestamp - obs1.Timestamp // unix timestamp -> seconds
+	distance := uint32(math.Abs(float64(obs2.Mile - obs1.Mile)))
+	time := uint32(math.Abs(float64(obs2.Timestamp - obs1.Timestamp))) // unix timestamp -> seconds
 	if time == 0 {
 		return false, 0
 	}
