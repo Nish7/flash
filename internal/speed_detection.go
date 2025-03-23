@@ -19,7 +19,7 @@ func (s *Server) handleSpeedViolations(conn net.Conn, obs Observation) error {
 
 		obs1 := preObs
 		obs2 := obs
-		if obs1.Timestamp > obs2.Timestamp {
+		if obs1.Mile > obs2.Mile {
 			obs1, obs2 = obs2, obs1
 		}
 
