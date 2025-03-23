@@ -33,14 +33,15 @@ func (s *Server) HandlePlateReq(conn net.Conn, reader *bufio.Reader, client *Cli
 		return err
 	}
 
-	log.Printf("[%s] Plate Request Recieved %v", conn.RemoteAddr().String(), plate)
-
 	s.slock.Lock()
 	cam, ok := s.cameras[conn]
-	s.slock.Unlock()
 	if !ok {
+		s.slock.Unlock()
 		return err
 	}
+	s.slock.Unlock()
+
+	log.Printf("[%s] Plate Request Recieved %v on Road %d Mile %d Limit %d", conn.RemoteAddr().String(), plate, cam.Road, cam.Mile, cam.Limit)
 
 	observation := Observation{Plate: plate.Plate, Road: cam.Road, Mile: cam.Mile, Timestamp: plate.Timestamp, Limit: cam.Limit}
 	s.store.AddObservation(observation)

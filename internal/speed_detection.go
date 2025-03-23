@@ -23,7 +23,7 @@ func (s *Server) handleSpeedViolations(conn net.Conn, obs Observation) error {
 		}
 
 		isSpeedViolation, speed := isSpeedViolation(obs1, obs2)
-		log.Printf("[%s] isSpeedViolation[%v] - %v\n", conn.RemoteAddr().String(), isSpeedViolation, speed)
+		log.Printf("[%s] isSpeedViolation[%v] - %v\n with Obs2 %v", conn.RemoteAddr().String(), isSpeedViolation, speed, obs2)
 
 		if !isSpeedViolation {
 			continue
