@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"log"
+	"math"
 	"net"
 	"slices"
 )
@@ -19,12 +20,8 @@ func (s *Server) handleSpeedViolations(conn net.Conn, obs Observation) error {
 
 		obs1 := preObs
 		obs2 := obs
-		if obs1.Mile > obs2.Mile {
+		if obs1.Timestamp > obs2.Timestamp {
 			obs1, obs2 = obs2, obs1
-		}
-
-		if obs2.Timestamp <= obs1.Timestamp {
-			return fmt.Errorf("Invalid: time must increase")
 		}
 
 		isSpeedViolation, speed := isSpeedViolation(obs1, obs2)
@@ -81,7 +78,7 @@ func (s *Server) SendTicket(conn net.Conn, ticket *Ticket) error {
 }
 
 func isSpeedViolation(obs1, obs2 Observation) (bool, uint16) {
-	distance := uint32(obs2.Mile - obs1.Mile)
+	distance := uint32(math.Abs(float64(obs2.Mile) - float64(obs1.Mile)))
 	time := obs2.Timestamp - obs1.Timestamp // unix timestamp -> seconds
 	if time == 0 {
 		return false, 0
