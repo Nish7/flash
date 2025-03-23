@@ -8,6 +8,10 @@ import (
 )
 
 func (s *Server) HandleCameraReq(conn net.Conn, reader *bufio.Reader, clientType *ClientType) error {
+	if *clientType != UNKNOWN {
+		return fmt.Errorf("Client is already registered.")
+	}
+
 	camera, err := ParseCameraRequest(reader)
 	if err != nil {
 		return fmt.Errorf("Failed to parse request %v", err)
