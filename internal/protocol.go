@@ -62,7 +62,7 @@ func ParseCameraRequest(reader *bufio.Reader) (Camera, error) {
 	err := binary.Read(reader, binary.BigEndian, &data)
 
 	if err != nil {
-		return data, fmt.Errorf("Error Parsing CameraRequest %x", err)
+		return data, fmt.Errorf("Error Parsing CameraRequest %v", err)
 	}
 
 	return data, nil
