@@ -2,6 +2,7 @@ package server
 
 import (
 	"log"
+	"math"
 	"net"
 	"slices"
 )
@@ -23,7 +24,7 @@ func (s *Server) handleSpeedViolations(conn net.Conn, obs Observation) error {
 		}
 
 		isSpeedViolation, speed := isSpeedViolation(obs1, obs2)
-		log.Printf("[%s] isSpeedViolation[%v] - %v\n", conn.RemoteAddr().String(), isSpeedViolation, speed)
+		log.Printf("[%s] isSpeedViolation[%v] - %v", conn.RemoteAddr().String(), isSpeedViolation, speed)
 
 		if !isSpeedViolation {
 			continue
@@ -39,9 +40,7 @@ func (s *Server) handleSpeedViolations(conn net.Conn, obs Observation) error {
 			Speed:      speed,
 		}
 
-		priorPlateTickets := s.store.GetTickets(obs.Plate)
-		log.Printf("[%s] Prior Plate Tickets [%s]: %v", conn.RemoteAddr().String(), obs.Plate, priorPlateTickets)
-		if !CheckTicketLimit(conn, ticket, priorPlateTickets) {
+		if !s.CheckTicketLimit(conn, ticket) {
 			continue
 		}
 
@@ -56,8 +55,6 @@ func (s *Server) handleSpeedViolations(conn net.Conn, obs Observation) error {
 func (s *Server) DispatchTicket(conn net.Conn, ticket *Ticket) error {
 	// check all active dispatcher
 	log.Printf("[%s] Dispatching Ticket [%v]\n", conn.RemoteAddr().String(), ticket)
-	s.slock.Lock()
-	defer s.slock.Unlock()
 	for c, disp := range s.dispatchers {
 		if slices.Contains(disp.Roads, ticket.Road) {
 			err := s.SendTicket(c, ticket)
@@ -80,7 +77,7 @@ func (s *Server) SendTicket(conn net.Conn, ticket *Ticket) error {
 }
 
 func isSpeedViolation(obs1, obs2 Observation) (bool, uint16) {
-	distance := uint32(obs2.Mile - obs1.Mile)
+	distance := uint32(math.Abs(float64(obs2.Mile) - float64(obs1.Mile)))
 	time := obs2.Timestamp - obs1.Timestamp // unix timestamp -> seconds
 	if time == 0 {
 		return false, 0
@@ -97,13 +94,17 @@ func isSpeedViolation(obs1, obs2 Observation) (bool, uint16) {
 }
 
 // implementing multi-day limit and with one limit per day
-func CheckTicketLimit(conn net.Conn, ticket *Ticket, plateTickets []Ticket) bool {
+func (s *Server) CheckTicketLimit(conn net.Conn, ticket *Ticket) bool {
 	day1 := ticket.Timestamp1 / 86400
 	day2 := ticket.Timestamp2 / 86400
 
 	// check one ticket per day
-	for _, t := range plateTickets {
-		if t.Timestamp1 == day1 || day1 == t.Timestamp2 || day2 == t.Timestamp1 || day2 == t.Timestamp2 {
+	priorPlateTickets := s.store.GetTickets(ticket.Plate)
+	log.Printf("[%s] Prior Plate Tickets [%s]: %v", conn.RemoteAddr().String(), ticket.Plate, priorPlateTickets)
+	for _, t := range priorPlateTickets {
+		t1 := t.Timestamp1 / 86400
+		t2 := t.Timestamp2 / 86400
+		if t1 == day1 || day1 == t2 || day2 == t1 || day2 == t2 {
 			log.Printf("[%s] Ticket Already Exist for Timestamp [%d or %d]\n", conn.RemoteAddr().String(), day1, day2)
 			return false
 		}

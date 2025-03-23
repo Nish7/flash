@@ -32,7 +32,7 @@ func TestMain(t *testing.M) {
 }
 
 func TestHeartbeatErrorHandling(t *testing.T) {
-	cameras := []srv.Camera{{Road: 124, Mile: 8, Limit: 60}}
+	cameras := []srv.Camera{{Road: 121, Mile: 8, Limit: 60}}
 	c1 := SetupCameras(t, addr, cameras...)[0]
 
 	c1.SendWantHeartbeat(srv.WantHeartbeat{Interval: 0})
@@ -46,7 +46,7 @@ func TestHeartbeatErrorHandling(t *testing.T) {
 }
 
 func TestSimpleErrorHandling(t *testing.T) {
-	cameras := []srv.Camera{{Road: 124, Mile: 8, Limit: 60}}
+	cameras := []srv.Camera{{Road: 190, Mile: 8, Limit: 60}}
 	cameraClients := SetupCameras(t, addr, cameras...)
 	cameraClients[0].SendIAMCamera(srv.Camera{Road: 124, Mile: 8, Limit: 60})
 
@@ -133,14 +133,14 @@ func TestSimpleTicketGeneration(t *testing.T) {
 	defer ClientCleanUp(t, dispatcherClients...)
 
 	// Send Plate Observations
-	c1.SendPlateRecord(srv.Plate{Plate: "UN1X", Timestamp: 0})
-	c2.SendPlateRecord(srv.Plate{Plate: "UN1X", Timestamp: 45})
+	c1.SendPlateRecord(srv.Plate{Plate: "PLAT", Timestamp: 0})
+	c2.SendPlateRecord(srv.Plate{Plate: "PLAT", Timestamp: 45})
 
 	time.Sleep(2000 * time.Millisecond)
 
 	// assert the ticket
 	reader := bufio.NewReader(d1.Conn)
-	expectedTicket := srv.Ticket{Plate: "UN1X", Road: 123, Mile1: 8, Mile2: 9, Timestamp1: 0, Timestamp2: 45, Speed: 8000}
+	expectedTicket := srv.Ticket{Plate: "PLAT", Road: 123, Mile1: 8, Mile2: 9, Timestamp1: 0, Timestamp2: 45, Speed: 8000}
 	AssertTicket(t, reader, expectedTicket)
 }
 
@@ -150,7 +150,7 @@ func TestPlateRequest(t *testing.T) {
 	defer client.Disconnect()
 
 	client.SendIAMCamera(srv.Camera{Road: 20, Mile: 80, Limit: 100})
-	client.SendPlateRecord(srv.Plate{Plate: "UN1X", Timestamp: 1000})
+	client.SendPlateRecord(srv.Plate{Plate: "GJGJ", Timestamp: 1000})
 
 	time.Sleep(500 * time.Millisecond) // test ended before verifying
 }

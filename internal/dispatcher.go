@@ -10,7 +10,7 @@ import (
 
 func (s *Server) HandleDispatcherReq(conn net.Conn, reader *bufio.Reader, client *ClientType) error {
 	if *client != UNKNOWN {
-		return fmt.Errorf("Client is alredy registered on this connection")
+		return fmt.Errorf("[dispatcher] Client is alredy registered on this connection")
 	}
 
 	d, err := ParseDispatcherRecord(reader)
@@ -19,9 +19,11 @@ func (s *Server) HandleDispatcherReq(conn net.Conn, reader *bufio.Reader, client
 	}
 
 	log.Printf("[%s] Dispatcher Recived %v\n", conn.RemoteAddr().String(), d)
+
 	s.slock.Lock()
+	defer s.slock.Unlock()
+
 	s.dispatchers[conn] = d
-	s.slock.Unlock()
 	*client = DISPATCHER
 
 	err = s.checkPendingTickets(conn, d)
