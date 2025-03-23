@@ -9,10 +9,6 @@ import (
 )
 
 func (s *Server) WantHeatbeatHandler(conn net.Conn, reader *bufio.Reader, isHeartbeatRegistered *bool, client *ClientType) error {
-	if *client == UNKNOWN {
-		return fmt.Errorf("Client is not registered.")
-	}
-
 	if *isHeartbeatRegistered {
 		return fmt.Errorf("Heartbeat is already registered.")
 	}
