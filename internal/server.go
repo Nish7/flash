@@ -17,7 +17,7 @@ type Server struct {
 	cameras       map[net.Conn]Camera
 	dispatchers   map[net.Conn]Dispatcher
 	pending_queue []Ticket
-	slock         sync.RWMutex
+	slock         sync.Mutex
 }
 
 func NewServer(addr string, store Store) *Server {
