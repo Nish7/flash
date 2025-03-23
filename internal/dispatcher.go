@@ -23,6 +23,8 @@ func (s *Server) HandleDispatcherReq(conn net.Conn, reader *bufio.Reader, client
 	s.dispatchers[conn] = d
 	*client = DISPATCHER
 
+	s.slock.Lock()
+	defer s.slock.Unlock()
 	err = s.checkPendingTickets(conn, d)
 	if err != nil {
 		return fmt.Errorf("Failed to parse request %v", err)

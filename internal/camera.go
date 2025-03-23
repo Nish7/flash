@@ -45,6 +45,8 @@ func (s *Server) HandlePlateReq(conn net.Conn, reader *bufio.Reader, client *Cli
 	observation := Observation{Plate: plate.Plate, Road: cam.Road, Mile: cam.Mile, Timestamp: plate.Timestamp, Limit: cam.Limit}
 	s.store.AddObservation(observation)
 
+	s.slock.Lock()
+	defer s.slock.Unlock()
 	err = s.handleSpeedViolations(conn, observation)
 	if err != nil {
 		return fmt.Errorf("Failed to Handle Plate Records: %v", err)

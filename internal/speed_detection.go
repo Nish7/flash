@@ -98,8 +98,6 @@ func (s *Server) CheckTicketLimit(conn net.Conn, ticket *Ticket) bool {
 	day2 := ticket.Timestamp2 / 86400
 
 	// check one ticket per day
-	s.slock.Lock()
-	defer s.slock.Unlock()
 	priorPlateTickets := s.store.GetTickets(ticket.Plate)
 	log.Printf("[%s] Prior Plate Tickets [%s]: %v", conn.RemoteAddr().String(), ticket.Plate, priorPlateTickets)
 	for _, t := range priorPlateTickets {
