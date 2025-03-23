@@ -9,7 +9,7 @@ import (
 
 func (s *Server) HandleCameraReq(conn net.Conn, reader *bufio.Reader, clientType *ClientType) error {
 	if *clientType != UNKNOWN {
-		return fmt.Errorf("Client is already registered.")
+		return fmt.Errorf("[camera request] Client is already registered.")
 	}
 
 	camera, err := ParseCameraRequest(reader)
@@ -37,14 +37,14 @@ func (s *Server) HandlePlateReq(conn net.Conn, reader *bufio.Reader, client *Cli
 		return err
 	}
 
+	log.Printf("[%s] Plate Request Recieved %v", conn.RemoteAddr().String(), plate)
+
 	s.slock.Lock()
 	cam, ok := s.cameras[conn]
 	s.slock.Unlock()
 	if !ok {
 		return err
 	}
-
-	log.Printf("[%s] Plate Record Receieved: %v from Camera %v\n", conn.RemoteAddr().String(), plate, cam)
 
 	observation := Observation{Plate: plate.Plate, Road: cam.Road, Mile: cam.Mile, Timestamp: plate.Timestamp, Limit: cam.Limit}
 	s.store.AddObservation(observation)

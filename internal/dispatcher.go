@@ -10,7 +10,7 @@ import (
 
 func (s *Server) HandleDispatcherReq(conn net.Conn, reader *bufio.Reader, client *ClientType) error {
 	if *client != UNKNOWN {
-		return fmt.Errorf("Client is alredy registered on this connection")
+		return fmt.Errorf("[dispatcher] Client is alredy registered on this connection")
 	}
 
 	d, err := ParseDispatcherRecord(reader)
