@@ -71,7 +71,7 @@ func (s *Server) HandleConnection(conn net.Conn) {
 	for {
 		msgType, err := ReadMsgType(reader)
 		if err != nil {
-			log.Printf("Connection Error: %v", err)
+			log.Printf("[%s] Connection Error: %v", conn.RemoteAddr().String(), err)
 			return
 		}
 

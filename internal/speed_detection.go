@@ -107,7 +107,7 @@ func (s *Server) CheckTicketLimit(conn net.Conn, ticket *Ticket) bool {
 		log.Printf("day1 and day2 %d %d %d %d", day1, day2, t.Timestamp1, t.Timestamp2)
 		t1 := t.Timestamp1 / 86400
 		t2 := t.Timestamp2 / 86400
-		if t1 == day1 || day1 == t2 || day2 == t2 || day2 == t2 {
+		if t1 == day1 || day1 == t2 || day2 == t1 || day2 == t2 {
 			log.Printf("[%s] Ticket Already Exist for Timestamp [%d or %d]\n", conn.RemoteAddr().String(), day1, day2)
 			return false
 		}
