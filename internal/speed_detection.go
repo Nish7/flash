@@ -96,6 +96,7 @@ func isSpeedViolation(obs1, obs2 Observation) (bool, uint16) {
 
 // implementing multi-day limit and with one limit per day
 func (s *Server) CheckTicketLimit(conn net.Conn, ticket *Ticket) bool {
+	log.Printf("Checking Ticket Limit Daily")
 	day1 := ticket.Timestamp1 / 86400
 	day2 := ticket.Timestamp2 / 86400
 
@@ -104,7 +105,6 @@ func (s *Server) CheckTicketLimit(conn net.Conn, ticket *Ticket) bool {
 	priorPlateTickets := s.store.GetTickets(ticket.Plate)
 	log.Printf("[%s] Prior Plate Tickets [%s]: %v", conn.RemoteAddr().String(), ticket.Plate, priorPlateTickets)
 	for _, t := range priorPlateTickets {
-		log.Printf("day1 and day2 %d %d %d %d", day1, day2, t.Timestamp1, t.Timestamp2)
 		t1 := t.Timestamp1 / 86400
 		t2 := t.Timestamp2 / 86400
 		if t1 == day1 || day1 == t2 || day2 == t1 || day2 == t2 {
