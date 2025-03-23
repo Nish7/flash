@@ -39,9 +39,7 @@ func (s *Server) handleSpeedViolations(conn net.Conn, obs Observation) error {
 			Speed:      speed,
 		}
 
-		priorPlateTickets := s.store.GetTickets(obs.Plate)
-		log.Printf("[%s] Prior Plate Tickets [%s]: %v", conn.RemoteAddr().String(), obs.Plate, priorPlateTickets)
-		if !CheckTicketLimit(conn, ticket, priorPlateTickets) {
+		if !s.CheckTicketLimit(conn, ticket) {
 			continue
 		}
 
@@ -97,17 +95,21 @@ func isSpeedViolation(obs1, obs2 Observation) (bool, uint16) {
 }
 
 // implementing multi-day limit and with one limit per day
-func CheckTicketLimit(conn net.Conn, ticket *Ticket, plateTickets []Ticket) bool {
+func (s *Server) CheckTicketLimit(conn net.Conn, ticket *Ticket) bool {
 	day1 := ticket.Timestamp1 / 86400
 	day2 := ticket.Timestamp2 / 86400
 
 	// check one ticket per day
-	for _, t := range plateTickets {
+	s.slock.Lock()
+	priorPlateTickets := s.store.GetTickets(ticket.Plate)
+	log.Printf("[%s] Prior Plate Tickets [%s]: %v", conn.RemoteAddr().String(), ticket.Plate, priorPlateTickets)
+	for _, t := range priorPlateTickets {
 		if t.Timestamp1 == day1 || day1 == t.Timestamp2 || day2 == t.Timestamp1 || day2 == t.Timestamp2 {
 			log.Printf("[%s] Ticket Already Exist for Timestamp [%d or %d]\n", conn.RemoteAddr().String(), day1, day2)
 			return false
 		}
 	}
+	s.slock.Unlock()
 
 	return true
 }
