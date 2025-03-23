@@ -54,8 +54,6 @@ func (s *Server) handleSpeedViolations(conn net.Conn, obs Observation) error {
 func (s *Server) DispatchTicket(conn net.Conn, ticket *Ticket) error {
 	// check all active dispatcher
 	log.Printf("[%s] Dispatching Ticket [%v]\n", conn.RemoteAddr().String(), ticket)
-	s.slock.Lock()
-	defer s.slock.Unlock()
 	for c, disp := range s.dispatchers {
 		if slices.Contains(disp.Roads, ticket.Road) {
 			err := s.SendTicket(c, ticket)
@@ -101,6 +99,7 @@ func (s *Server) CheckTicketLimit(conn net.Conn, ticket *Ticket) bool {
 
 	// check one ticket per day
 	s.slock.Lock()
+	defer s.slock.Unlock()
 	priorPlateTickets := s.store.GetTickets(ticket.Plate)
 	log.Printf("[%s] Prior Plate Tickets [%s]: %v", conn.RemoteAddr().String(), ticket.Plate, priorPlateTickets)
 	for _, t := range priorPlateTickets {
@@ -111,7 +110,6 @@ func (s *Server) CheckTicketLimit(conn net.Conn, ticket *Ticket) bool {
 			return false
 		}
 	}
-	s.slock.Unlock()
 
 	return true
 }
