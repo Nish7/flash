@@ -19,9 +19,10 @@ func (s *Server) HandleDispatcherReq(conn net.Conn, reader *bufio.Reader, client
 	}
 
 	log.Printf("[%s] Dispatcher Recived %v\n", conn.RemoteAddr().String(), d)
+
 	s.slock.Lock()
+	defer s.slock.Unlock()
 	s.dispatchers[conn] = d
-	s.slock.Unlock()
 	*client = DISPATCHER
 
 	err = s.checkPendingTickets(conn, d)

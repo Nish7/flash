@@ -8,21 +8,6 @@ import (
 )
 
 func (s *Server) HandleCameraReq(conn net.Conn, reader *bufio.Reader, clientType *ClientType) error {
-	if *clientType != UNKNOWN {
-		return fmt.Errorf("[camera request] Client is already registered.")
-	}
-
-	buffered := reader.Buffered()
-	fmt.Printf("[%s] Buffered bytes available: %X\n", conn.RemoteAddr().String(), buffered)
-
-	// Peek at the data without consuming it
-	a, err := reader.Peek(buffered)
-	if err != nil {
-		fmt.Printf("Peek error: %v\n", err)
-	} else {
-		fmt.Printf("[%s] Peeked data: %x\n", conn.RemoteAddr().String(), a) // Print as hex
-	}
-
 	camera, err := ParseCameraRequest(reader)
 	if err != nil {
 		return fmt.Errorf("Failed to parse request %v", err)
