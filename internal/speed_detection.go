@@ -103,6 +103,7 @@ func (s *Server) CheckTicketLimit(conn net.Conn, ticket *Ticket) bool {
 	s.slock.Lock()
 	priorPlateTickets := s.store.GetTickets(ticket.Plate)
 	log.Printf("[%s] Prior Plate Tickets [%s]: %v", conn.RemoteAddr().String(), ticket.Plate, priorPlateTickets)
+	log.Printf("day1 and day2 %d %d", day1, day2)
 	for _, t := range priorPlateTickets {
 		if t.Timestamp1 == day1 || day1 == t.Timestamp2 || day2 == t.Timestamp1 || day2 == t.Timestamp2 {
 			log.Printf("[%s] Ticket Already Exist for Timestamp [%d or %d]\n", conn.RemoteAddr().String(), day1, day2)
