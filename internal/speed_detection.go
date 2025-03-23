@@ -96,7 +96,6 @@ func isSpeedViolation(obs1, obs2 Observation) (bool, uint16) {
 
 // implementing multi-day limit and with one limit per day
 func (s *Server) CheckTicketLimit(conn net.Conn, ticket *Ticket) bool {
-	log.Printf("Checking Ticket Limit Daily")
 	day1 := ticket.Timestamp1 / 86400
 	day2 := ticket.Timestamp2 / 86400
 
