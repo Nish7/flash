@@ -58,19 +58,8 @@ func ParseString(reader *bufio.Reader) (string, error) {
 }
 
 func ParseCameraRequest(reader *bufio.Reader) (Camera, error) {
-	buffered := reader.Buffered()
-	fmt.Printf("Buffered bytes available: %d\n", buffered)
-
-	// Peek at the data without consuming it
-	a, err := reader.Peek(buffered)
-	if err != nil {
-		fmt.Printf("Peek error: %v\n", err)
-	} else {
-		fmt.Printf("Peeked data: %x\n", a) // Print as hex
-	}
-
 	var data Camera
-	err = binary.Read(reader, binary.BigEndian, &data)
+	err := binary.Read(reader, binary.BigEndian, &data)
 
 	if err != nil {
 		return data, fmt.Errorf("Error Parsing CameraRequest %v", err)
